@@ -1,0 +1,12 @@
+- name: Deploy application to app target
+  hosts: app
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Install python and pip
+      raw: |
+        yum install -y python39 python39-pip || dnf install -y python39 python39-pip
+
+  roles:
+    - app

@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'APP_VERSION', defaultValue: '1', description: 'Build number to deploy')
+    }
+
+    environment {
+        NEXUS_URL = "http://nexus:8081"
+        NEXUS_REPO = "lab5"
+        NEXUS_CREDENTIALS_ID = "nexus_cred"
+        APP_NAME = "python-app"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Download from Nexus') {
+            steps {
+                script {
+                    def artifactName = "${APP_NAME}-${params.APP_VERSION}.tar.gz"
+                    withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIALS_ID,
+                                                      usernameVariable: 'NEXUS_USER',
+                                                      passwordVariable: 'NEXUS_PASS')]) {
+                        sh """
+                            curl -f -u "$NEXUS_USER:$NEXUS_PASS" \
+                              "${NEXUS_URL}/repository/${NEXUS_REPO}/${APP_NAME}/${artifactName}" \
+                              -o "${artifactName}"
+                        """
+                    }
+                    sh "echo ${artifactName} > artifact_name.txt"
+                }
+            }
+        }
+
+        stage('Run ansible') {
+            steps {
+                script {
+                    def artifactName = readFile('artifact_name.txt').trim()
+                    sh """
+                        ANSIBLE_HOST_KEY_CHECKING=False \
+                        ansible-playbook ansible/site.yml \
+                        -i ansible/inventory.ini \
+                        -e artifact_file=$WORKSPACE/${artifactName}
+                    """
+                }
+            }
+        }
+
+        stage('Health check') {
+            steps {
+                sh 'curl -f http://jenkins_slave1:5000/health'
+            }
+        }
+    }
+}

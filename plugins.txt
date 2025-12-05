@@ -1,0 +1,7 @@
+workflow-aggregator
+git
+git-client
+github
+allure-jenkins-plugin
+pipeline-stage-view
+sonar

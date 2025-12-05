@@ -1,0 +1,39 @@
+---
+- name: Create app directory
+  file:
+    path: /opt/myapp
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Upload and extract app artifact
+  unarchive:
+    src: "{{ artifact_file }}"
+    dest: /opt/myapp
+    remote_src: false        # архив лежит на Jenkins, его надо скопировать
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Make start script executable
+  file:
+    path: /opt/myapp/app/start_app.sh
+    mode: '0755'
+
+- name: Kill old app if running (best-effort)
+  shell: pkill -f 'python app.py'
+  failed_when: false   # don't fail even if rc != 0
+  changed_when: false  # keep it idempotent in reports
+
+- name: Start app
+  shell: 'nohup /opt/myapp/app/start_app.sh > /opt/myapp/app/app.log 2>&1 &'
+  args:
+    chdir: /opt/myapp/app
+
+- name: Wait for app
+  wait_for:
+    host: 127.0.0.1
+    port: 5000
+    delay: 5
+    timeout: 20

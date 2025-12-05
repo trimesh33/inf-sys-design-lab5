@@ -1,0 +1,105 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+    }
+
+    environment {
+        JAVA_HOME = "${tool 'jdk17'}"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        NEXUS_URL = "http://nexus:8081"
+        NEXUS_REPO = "lab5"
+        NEXUS_CREDENTIALS_ID = "nexus_cred"
+        APP_NAME = "python-app"
+    }
+
+    stages {
+        stage('Environment Check') {
+            steps {
+                sh '''
+                    echo "Java version:"
+                    java -version || true
+                    echo "Python version:"
+                    python3 --version || true
+                    echo "Maven version:"
+                    mvn -version || true
+                    echo "Current directory:"
+                    pwd
+                    echo "JAVA_HOME: ${JAVA_HOME}"
+                '''
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r app/requirements.txt
+                '''
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    flake8 app || true
+                '''
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    pytest -vv
+                '''
+            }
+        }
+
+        stage('Generate Allure report') {
+            steps {
+                script {
+                    allure([
+                        results: [[path: 'allure-results']]
+                    ])
+                }
+            }
+        }
+
+        stage('Create artifact') {
+            steps {
+                sh '''
+                    ARTIFACT_NAME=${APP_NAME}-${BUILD_NUMBER}.tar.gz
+                    tar -czf "${ARTIFACT_NAME}" app
+                    echo "${ARTIFACT_NAME}" > artifact_name.txt
+                '''
+            }
+        }
+
+        stage('Deploy to Nexus') {
+            steps {
+                script {
+                    def artifactName = readFile('artifact_name.txt').trim()
+                    withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIALS_ID,
+                                                      usernameVariable: 'NEXUS_USER',
+                                                      passwordVariable: 'NEXUS_PASS')]) {
+                        sh """
+                            curl -v -u "$NEXUS_USER:$NEXUS_PASS" --upload-file "${artifactName}" \
+                              "${NEXUS_URL}/repository/${NEXUS_REPO}/${APP_NAME}/${artifactName}"
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
