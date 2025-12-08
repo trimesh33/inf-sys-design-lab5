@@ -70,11 +70,21 @@ pipeline {
             steps {
                 script {
                     allure([
+                        toolName: 'allure',
                         results: [[path: 'allure-results']]
                     ])
                 }
             }
         }
+        // stage('Generate Allure report') {
+        //     steps {
+        //         script {
+        //             allure([
+        //                 results: [[path: 'allure-results']]
+        //             ])
+        //         }
+        //     }
+        // }
 
         stage('Create artifact') {
             steps {
@@ -101,15 +111,5 @@ pipeline {
                 }
             }
         }
-
-        stage('Debug workspace') {
-            steps {
-                sh '''
-                    echo "Workspace:"
-                    pwd
-                '''
-            }
-        }
-
     }
 }
