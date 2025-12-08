@@ -112,15 +112,16 @@ pipeline {
             }
         }
     }
-}
 
-post {
-    always {
-        script {
-            allure([
-                toolName: 'allure',
-                results: [[path: 'allure-results']]
-            ])
+    post {
+        always {
+            script {
+                allure([
+                    toolName: 'allure',
+                    results: [[path: 'allure-results']]
+                ])
+            }
         }
     }
 }
+
