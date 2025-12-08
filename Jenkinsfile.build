@@ -101,5 +101,17 @@ pipeline {
                 }
             }
         }
+
+        stage('Debug workspace') {
+            steps {
+                sh '''
+                    echo "Workspace:"
+                    pwd
+                    echo "Tree:"
+                    ls -R .
+                '''
+            }
+        }
+
     }
 }
