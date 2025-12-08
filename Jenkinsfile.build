@@ -96,9 +96,12 @@ pipeline {
     post {
         always {
             script {
-                echo "allure report from $WORKSPACE/allure-results"
-                allure includeProperties: false, jdk: '', toolName: 'allure',
-                       results: [[path: 'allure-results']]
+                echo "Publishing Allure report from $WORKSPACE/allure-results"
+
+                allure includeProperties: false,
+                    jdk: '',
+                    toolName: 'allure',
+                    results: [[path: 'allure-results']]
             }
         }
     }
