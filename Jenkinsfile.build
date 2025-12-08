@@ -107,8 +107,6 @@ pipeline {
                 sh '''
                     echo "Workspace:"
                     pwd
-                    echo "Tree:"
-                    ls -R .
                 '''
             }
         }
