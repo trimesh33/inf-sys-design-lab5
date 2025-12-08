@@ -61,7 +61,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    pytest -vv --alluredir=../allure-results
+                    pytest -vv --alluredir=allure-results
                 '''
             }
         }
