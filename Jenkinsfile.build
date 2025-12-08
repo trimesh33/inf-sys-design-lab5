@@ -66,26 +66,6 @@ pipeline {
             }
         }
 
-        // stage('Generate Allure report') {
-        //     steps {
-        //         script {
-        //             allure([
-        //                 toolName: 'allure',
-        //                 results: [[path: 'allure-results']]
-        //             ])
-        //         }
-        //     }
-        // }
-        stage('Generate Allure report') {
-            steps {
-                script {
-                    allure([
-                        results: [[path: 'allure-results']]
-                    ])
-                }
-            }
-        }
-
         stage('Create artifact') {
             steps {
                 sh '''
@@ -116,12 +96,10 @@ pipeline {
     post {
         always {
             script {
-                allure([
-                    toolName: 'allure',
-                    results: [[path: 'allure-results']]
-                ])
+                echo "allure report from $WORKSPACE/allure-results"
+                allure includeProperties: false, jdk: '', toolName: 'allure',
+                       results: [[path: 'allure-results']]
             }
         }
     }
 }
-
